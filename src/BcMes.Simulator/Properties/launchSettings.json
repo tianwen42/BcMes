@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "BcMes.Simulator": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:2958;http://localhost:2961"
+    }
+  }
+}

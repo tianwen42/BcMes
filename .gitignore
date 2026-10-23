@@ -1,0 +1,32 @@
+# Build artifacts
+bin/
+obj/
+out/
+publish/
+
+# IDE
+.vs/
+.idea/
+*.user
+*.suo
+
+# Secrets / environment
+.env
+.env.*
+!.env.example
+
+# Project-local agent memory (not part of the product)
+.workbuddy/
+
+# Runtime data
+deadletter/
+logs/
+*.log
+*.jsonl
+
+# OPC UA self-signed certificates (auto-generated on first start)
+pki/
+
+# OS
+Thumbs.db
+.DS_Store

@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>BcMes.Server</RootNamespace>
+    <AssemblyName>BcMes.Server</AssemblyName>
+    <UserSecretsId>bc-mes-server</UserSecretsId>
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BcMes.Contracts\BcMes.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dapper" Version="2.1.89" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.1" />
+    <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua.Client" Version="1.5.*" />
+    <PackageReference Include="StackExchange.Redis" Version="3.4.5" />
+    <PackageReference Include="TDengine.Connector" Version="3.2.1" />
+  </ItemGroup>
+
+</Project>

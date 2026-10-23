@@ -1,0 +1,40 @@
+<Application x:Class="BcMes.Client.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <SolidColorBrush x:Key="Bg"        Color="#FFF4F6F8"/>
+        <SolidColorBrush x:Key="Panel"     Color="#FFFFFFFF"/>
+        <SolidColorBrush x:Key="PanelEdge" Color="#FFD9DEE5"/>
+        <SolidColorBrush x:Key="Text"      Color="#FF1B2430"/>
+        <SolidColorBrush x:Key="TextDim"   Color="#FF6B7684"/>
+        <SolidColorBrush x:Key="Accent"    Color="#FF2F81F7"/>
+        <SolidColorBrush x:Key="Ok"        Color="#FF1A9E45"/>
+        <SolidColorBrush x:Key="Ng"        Color="#FFD93A34"/>
+
+        <!-- NG 行整行高亮，车间里隔着两米也能一眼看到 -->
+        <Style x:Key="RowItem" TargetType="ListViewItem">
+            <Setter Property="Foreground" Value="{StaticResource Text}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="4,2"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsNg}" Value="True">
+                    <Setter Property="Background" Value="#26D93A34"/>
+                    <Setter Property="Foreground" Value="{StaticResource Ng}"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="HeadRow" TargetType="GridViewColumnHeader">
+            <Setter Property="Background" Value="{StaticResource Panel}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextDim}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource PanelEdge}"/>
+            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        </Style>
+    </Application.Resources>
+</Application>

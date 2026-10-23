@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/BcMes.Client/BcMes.Client.csproj" />
+    <Project Path="src/BcMes.Contracts/BcMes.Contracts.csproj" />
+    <Project Path="src/BcMes.Server/BcMes.Server.csproj" />
+    <Project Path="src/BcMes.Simulator/BcMes.Simulator.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,829 @@
+<Window x:Class="BcMes.Client.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:BcMes.Client.ViewModels"
+        Icon="app.ico"
+        Title="BcMes · 锂电池检测 MES 工位终端"
+        Height="780" Width="1280" MinHeight="600" MinWidth="1040"
+        Background="{StaticResource Bg}"
+        FontFamily="Microsoft YaHei UI" FontSize="13"
+        Foreground="{StaticResource Text}">
+
+    <Window.DataContext>
+        <vm:MainViewModel/>
+    </Window.DataContext>
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <!-- 深色风页签 -->
+        <Style TargetType="TabControl">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+        <Style TargetType="TabItem">
+            <Setter Property="Foreground" Value="{StaticResource TextDim}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="Bd" Background="Transparent" BorderThickness="0,0,0,2"
+                                BorderBrush="Transparent" Padding="16,8" Margin="0,0,4,6">
+                            <ContentPresenter ContentSource="Header"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"
+                                              TextElement.FontWeight="SemiBold"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Accent}"/>
+                                <Setter Property="Foreground" Value="{StaticResource Text}"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#14000000"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- 标题栏 -->
+        <Grid Grid.Row="0" Margin="0,0,0,12">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Border Width="34" Height="34" CornerRadius="8" Background="{StaticResource Accent}">
+                    <TextBlock Text="MES" FontSize="11" FontWeight="SemiBold"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White"/>
+                </Border>
+                <TextBlock Text="锂电池中后段检测系统" FontSize="18" FontWeight="SemiBold"
+                           Margin="12,0,0,0" VerticalAlignment="Center"/>
+                <TextBlock Text="  工位终端 · 适用于电芯 SN 级追溯与实时判定"
+                           Foreground="{StaticResource TextDim}" VerticalAlignment="Center"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <Ellipse Width="9" Height="9" Margin="0,0,7,0">
+                    <Ellipse.Style>
+                        <Style TargetType="Ellipse">
+                            <Setter Property="Fill" Value="#FF8A98A8"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Connected}" Value="True">
+                                    <Setter Property="Fill" Value="{StaticResource Ok}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Ellipse.Style>
+                </Ellipse>
+                <TextBlock Text="{Binding ConnectionText}" Foreground="{StaticResource TextDim}"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- 指标卡 -->
+        <UniformGrid Grid.Row="1" Columns="4" Margin="0,0,0,14">
+            <Border Background="{StaticResource Panel}" BorderBrush="{StaticResource PanelEdge}"
+                    BorderThickness="1" CornerRadius="10" Padding="16,12" Margin="0,0,10,0">
+                <StackPanel>
+                    <TextBlock Text="{Binding Total}" FontSize="26" FontWeight="SemiBold"/>
+                    <TextBlock Text="今日检测总数" FontSize="12" Foreground="{StaticResource TextDim}" Margin="0,3,0,0"/>
+                </StackPanel>
+            </Border>
+            <Border Background="{StaticResource Panel}" BorderBrush="{StaticResource PanelEdge}"
+                    BorderThickness="1" CornerRadius="10" Padding="16,12" Margin="0,0,10,0">
+                <StackPanel>
+                    <TextBlock Text="{Binding Ok}" FontSize="26" FontWeight="SemiBold" Foreground="{StaticResource Ok}"/>
+                    <TextBlock Text="合格 OK" FontSize="12" Foreground="{StaticResource TextDim}" Margin="0,3,0,0"/>
+                </StackPanel>
+            </Border>
+            <Border Background="{StaticResource Panel}" BorderBrush="{StaticResource PanelEdge}"
+                    BorderThickness="1" CornerRadius="10" Padding="16,12" Margin="0,0,10,0">
+                <StackPanel>
+                    <TextBlock Text="{Binding Ng}" FontSize="26" FontWeight="SemiBold" Foreground="{StaticResource Ng}"/>
+                    <TextBlock Text="不良 NG" FontSize="12" Foreground="{StaticResource TextDim}" Margin="0,3,0,0"/>
+                </StackPanel>
+            </Border>
+            <Border Background="{StaticResource Panel}" BorderBrush="{StaticResource PanelEdge}"
+                    BorderThickness="1" CornerRadius="10" Padding="16,12">
+                <StackPanel>
+                    <TextBlock FontSize="26" FontWeight="SemiBold">
+                        <Run Text="{Binding YieldRate, StringFormat={}{0:0.00}}"/>
+                        <Run Text="%" FontSize="15" Foreground="{StaticResource TextDim}"/>
+                    </TextBlock>
+                    <TextBlock Text="直通率" FontSize="12" Foreground="{StaticResource TextDim}" Margin="0,3,0,0"/>
+                </StackPanel>
+            </Border>
+        </UniformGrid>
+
+        <!-- 主体：三个页签 -->
+        <TabControl x:Name="MainTabs" Grid.Row="2" SelectedIndex="{Binding SelectedTabIndex}">
+
+            <!-- ═══ 页签 1：实时监控 ═══ -->
+            <TabItem Header="实时监控">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.7*"/>
+                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="1*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- 实时检测流 -->
+                    <Border Grid.Column="0" Background="{StaticResource Panel}" BorderBrush="{StaticResource PanelEdge}"
+                            BorderThickness="1" CornerRadius="10" Padding="10">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Padding="4,0,0,8">
+                                <Run Text="实时检测流" FontWeight="SemiBold"/>
+                                <Run Text="  双击任意行可直接追溯该电芯" Foreground="{StaticResource TextDim}" FontSize="12"/>
+                            </TextBlock>
+
+                            <ListView Grid.Row="1" x:Name="StreamList" ItemsSource="{Binding Stream}"
+                                      Background="Transparent" BorderThickness="0"
+                                      ItemContainerStyle="{StaticResource RowItem}"
+                                      ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                      VirtualizingPanel.IsVirtualizing="True"
+                                      MouseDoubleClick="OnRowDoubleClick">
+                                <ListView.Resources>
+                                    <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource HeadRow}"/>
+                                </ListView.Resources>
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="时间"   Width="132"  DisplayMemberBinding="{Binding Time}"/>
+                                        <GridViewColumn Header="电芯 SN" Width="172" DisplayMemberBinding="{Binding CellSn}"/>
+                                        <GridViewColumn Header="工序"   Width="88"  DisplayMemberBinding="{Binding OperationCode}"/>
+                                        <GridViewColumn Header="设备"   Width="100" DisplayMemberBinding="{Binding EquipmentCode}"/>
+                                        <GridViewColumn Header="判定"   Width="46"  DisplayMemberBinding="{Binding Result}"/>
+                                        <GridViewColumn Header="检测值" Width="330" DisplayMemberBinding="{Binding Detail}"/>
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+                        </Grid>
+                    </Border>
+
+                    <!-- SN 追溯 -->
+                    <Border Grid.Column="2" Background="{StaticResource Panel}" BorderBrush="{StaticResource PanelEdge}"
+                            BorderThickness="1" CornerRadius="10" Padding="10">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Text="单件追溯" FontWeight="SemiBold" Padding="4,0,0,8"/>
+
+                            <Grid Grid.Row="1" Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" Text="{Binding TraceInput, UpdateSourceTrigger=PropertyChanged}"
+                                         Background="#FFFFFFFF" Foreground="{StaticResource Text}"
+                                         BorderBrush="{StaticResource PanelEdge}" Padding="8,7" FontSize="13">
+                                    <TextBox.InputBindings>
+                                        <KeyBinding Key="Enter" Command="{Binding TraceCommand}"/>
+                                    </TextBox.InputBindings>
+                                </TextBox>
+                                <Button Grid.Column="1" Content="查询" Margin="8,0,0,0" Padding="16,7"
+                                        Command="{Binding TraceCommand}"
+                                        Background="{StaticResource Accent}" Foreground="White" BorderThickness="0"/>
+                            </Grid>
+
+                            <TextBlock Grid.Row="2" Text="{Binding TraceSummary}" TextWrapping="Wrap"
+                                       Foreground="{StaticResource TextDim}" FontSize="12" Margin="2,0,2,8"
+                                       MinHeight="18"/>
+
+                            <ListView Grid.Row="3" ItemsSource="{Binding TraceRows}"
+                                      Background="Transparent" BorderThickness="0"
+                                      ItemContainerStyle="{StaticResource RowItem}"
+                                      ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                <ListView.Resources>
+                                    <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource HeadRow}"/>
+                                </ListView.Resources>
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="工序" Width="82" DisplayMemberBinding="{Binding OperationCode}"/>
+                                        <GridViewColumn Header="结果" Width="44" DisplayMemberBinding="{Binding Result}"/>
+                                        <GridViewColumn Header="时间" Width="146" DisplayMemberBinding="{Binding Time}"/>
+                                        <GridViewColumn Header="检测值" Width="180" DisplayMemberBinding="{Binding Detail}"/>
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- ═══ 页签 2：SPC 控制图 ═══ -->
+            <TabItem Header="SPC 控制图">
+                <Border Background="{StaticResource Panel}" BorderBrush="{StaticResource PanelEdge}"
+                        BorderThickness="1" CornerRadius="10" Padding="12">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- 工具行 -->
+                        <Grid Grid.Row="0" Margin="2,0,2,8">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="SPC 过程控制（I-MR 图）" FontWeight="SemiBold" VerticalAlignment="Center"
+                                           Margin="2,0,14,0"/>
+                                <ComboBox x:Name="SpcCombo" ItemsSource="{Binding SpcItems}"
+                                          SelectedItem="{Binding SelectedSpcItem}" MinWidth="300"
+                                          Background="#FFFFFFFF" Foreground="{StaticResource Text}"
+                                          VerticalContentAlignment="Center">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Foreground="{StaticResource Text}">
+                                                <Run Text="{Binding ItemCode}"/>
+                                                <Run Text=" · " Foreground="{StaticResource TextDim}"/>
+                                                <Run Text="{Binding ItemName}"/>
+                                                <Run Text="{Binding SampleCount, StringFormat={}( {0} 样本)}" Foreground="{StaticResource TextDim}"/>
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <Button Content="刷新" Margin="8,0,0,0" Padding="14,6"
+                                        Command="{Binding LoadSpcCommand}"
+                                        Background="{StaticResource Accent}" Foreground="White" BorderThickness="0"/>
+                                <Button Content="加载中…" Margin="8,0,0,0" Padding="14,6" IsEnabled="False"
+                                        Background="{StaticResource Panel}" Foreground="{StaticResource TextDim}" BorderThickness="0">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SpcLoading}" Value="True">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                                <Button Content="导出 CSV" Margin="8,0,0,0" Padding="14,6" Click="OnExportSpc"
+                                        Background="{StaticResource Panel}" Foreground="{StaticResource Text}"
+                                        BorderBrush="{StaticResource PanelEdge}" BorderThickness="1"/>
+                                <CheckBox Content="自动刷新（0.3 秒）" IsChecked="{Binding SpcAutoRefresh}"
+                                          VerticalAlignment="Center" Margin="18,0,0,0"
+                                          Foreground="{StaticResource TextDim}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- 统计摘要 -->
+                        <TextBlock Grid.Row="1" Text="{Binding SpcSummary}" TextWrapping="Wrap"
+                                   Foreground="{StaticResource TextDim}" FontSize="12" Margin="4,0,4,4" MinHeight="18"/>
+                        <!-- 交互提示 / 悬停读数 -->
+                        <TextBlock Grid.Row="2" Text="{Binding SpcHoverText}" TextWrapping="Wrap"
+                                   Foreground="{StaticResource Accent}" FontSize="12" Margin="4,0,4,6" MinHeight="18"/>
+
+                        <!-- 控制图：DrawingVisual 渲染为冻结的 DrawingImage（渲染线程原子换帧，零闪烁）
+                             + 交互覆盖层（悬停/缩放/平移，只重绘悬停元素不动底图） -->
+                        <Border Grid.Row="3" Background="#FFFFFFFF" BorderBrush="{StaticResource PanelEdge}"
+                                BorderThickness="1" CornerRadius="8">
+                            <Grid SizeChanged="OnSpcCanvasSizeChanged">
+                                <Image x:Name="SpcImage" Stretch="None" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                                <!-- 交互覆盖层：全部用 Preview 隧道事件 —— MouseLeftButtonDown 等是直连路由，
+                                     悬停气泡/高亮环盖在点上时 Canvas 收不到直连事件，双击会失灵 -->
+                                <Canvas x:Name="SpcOverlay" Background="Transparent"
+                                        MouseLeave="OnSpcMouseLeave"
+                                        PreviewMouseMove="OnSpcMouseMove"
+                                        MouseWheel="OnSpcMouseWheel"
+                                        PreviewMouseLeftButtonDown="OnSpcMouseDown"
+                                        PreviewMouseLeftButtonUp="OnSpcMouseUp"
+                                        PreviewMouseRightButtonUp="OnSpcResetView"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Border>
+            </TabItem>
+
+            <!-- ═══ 页签 3：质量分析 ═══ -->
+            <TabItem Header="质量分析">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="1.1*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- 摘要行 -->
+                    <Grid Grid.Row="0" Margin="0,0,0,8">
+                        <TextBlock Text="{Binding QualitySummary}" TextWrapping="Wrap"
+                                   Foreground="{StaticResource TextDim}" FontSize="12" MinHeight="18"
+                                   VerticalAlignment="Center" Margin="4,0,120,0"/>
+                        <Button Content="导出 CSV" HorizontalAlignment="Right" Padding="14,6" Click="OnExportQuality"
+                                Background="{StaticResource Panel}" Foreground="{StaticResource Text}"
+                                BorderBrush="{StaticResource PanelEdge}" BorderThickness="1"/>
+                    </Grid>
+
+                    <!-- 工序流程图：电芯从前往后流经各工序，节点标注检测数/不良/不良率 -->
+                    <Border Grid.Row="1" Background="{StaticResource Panel}" BorderBrush="{StaticResource PanelEdge}"
+                            BorderThickness="1" CornerRadius="10" Padding="12" Margin="0,0,0,10">
+                        <StackPanel>
+                            <TextBlock FontWeight="SemiBold" Margin="2,0,0,10">
+                                <Run Text="工序流程 · 不良率"/>
+                                <Run Text="  电芯从前往后流经各工序 · 绿 &lt; 2% ≤ 橙 &lt; 5% ≤ 红" FontSize="12" Foreground="{StaticResource TextDim}"/>
+                            </TextBlock>
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                <ItemsControl ItemsSource="{Binding OpFlow}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Border Width="128" CornerRadius="8" Padding="10,8" BorderThickness="1.5" Cursor="Hand"
+                                                        ToolTip="点击查看该工序的不良电芯明细">
+                                                    <Border.InputBindings>
+                                                        <MouseBinding Gesture="LeftClick"
+                                                                      Command="{Binding DataContext.SelectNgOpCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                      CommandParameter="{Binding}"/>
+                                                    </Border.InputBindings>
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="#FFFFFFFF"/>
+                                                            <Setter Property="BorderBrush" Value="{StaticResource PanelEdge}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding HasData}" Value="False">
+                                                                    <Setter Property="Opacity" Value="0.45"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding RateLevel}" Value="1">
+                                                                    <Setter Property="BorderBrush" Value="#C77800"/>
+                                                                    <Setter Property="Background" Value="#14C77800"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding RateLevel}" Value="2">
+                                                                    <Setter Property="BorderBrush" Value="{StaticResource Ng}"/>
+                                                                    <Setter Property="Background" Value="#14D93A34"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                    <Setter Property="BorderBrush" Value="{StaticResource Accent}"/>
+                                                                    <Setter Property="BorderThickness" Value="2.5"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <StackPanel>
+                                                        <!-- 段位标签 -->
+                                                        <TextBlock FontSize="11" FontWeight="SemiBold">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Foreground" Value="{StaticResource Accent}"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding Stage}" Value="中段">
+                                                                            <Setter Property="Foreground" Value="#C77800"/>
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding Stage}" Value="后段">
+                                                                            <Setter Property="Foreground" Value="{StaticResource Ok}"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                            <Run Text="{Binding Stage}"/><Run Text=" · " Foreground="{StaticResource TextDim}"/><Run Text="{Binding OperationCode}" Foreground="{StaticResource TextDim}"/>
+                                                        </TextBlock>
+                                                        <!-- 工序名 -->
+                                                        <TextBlock Text="{Binding OpName}" FontSize="15" FontWeight="SemiBold"
+                                                                   Foreground="{StaticResource Text}" Margin="0,2,0,4"/>
+                                                        <!-- 检测数 / 不良数 -->
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <StackPanel Grid.Column="0">
+                                                                <TextBlock Text="{Binding Total}" FontSize="13" FontWeight="SemiBold"
+                                                                           Foreground="{StaticResource Text}"/>
+                                                                <TextBlock Text="检测" FontSize="11" Foreground="{StaticResource TextDim}"/>
+                                                            </StackPanel>
+                                                            <StackPanel Grid.Column="1">
+                                                                <TextBlock Text="{Binding NgCount}" FontSize="13" FontWeight="SemiBold">
+                                                                    <TextBlock.Style>
+                                                                        <Style TargetType="TextBlock">
+                                                                            <Setter Property="Foreground" Value="{StaticResource Text}"/>
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding HasNg}" Value="True">
+                                                                                    <Setter Property="Foreground" Value="{StaticResource Ng}"/>
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </TextBlock.Style>
+                                                                </TextBlock>
+                                                                <TextBlock Text="不良" FontSize="11" Foreground="{StaticResource TextDim}"/>
+                                                            </StackPanel>
+                                                        </Grid>
+                                                        <!-- 不良率 -->
+                                                        <TextBlock Text="{Binding RateText}" FontSize="18" FontWeight="SemiBold" Margin="0,4,0,0">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Foreground" Value="{StaticResource Ok}"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding RateLevel}" Value="1">
+                                                                            <Setter Property="Foreground" Value="#C77800"/>
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding RateLevel}" Value="2">
+                                                                            <Setter Property="Foreground" Value="{StaticResource Ng}"/>
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding HasData}" Value="False">
+                                                                            <Setter Property="Foreground" Value="{StaticResource TextDim}"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                    </StackPanel>
+                                                </Border>
+                                                <!-- 箭头：末节点不画 -->
+                                                <TextBlock Text="➜" FontSize="22" VerticalAlignment="Center" Margin="6,0">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Foreground" Value="{StaticResource Accent}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding HasArrow}" Value="False">
+                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- 不良帕累托（按失效检测项，全宽） -->
+                    <Border Grid.Row="2" Background="{StaticResource Panel}" BorderBrush="{StaticResource PanelEdge}"
+                            BorderThickness="1" CornerRadius="10" Padding="12" Margin="0,0,0,10">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" FontWeight="SemiBold" Margin="2,0,0,10">
+                                <Run Text="不良统计 · 帕累托"/>
+                                <Run Text="  按失效检测项聚合" FontSize="12" Foreground="{StaticResource TextDim}"/>
+                            </TextBlock>
+
+                            <!-- 表头 -->
+                            <Grid Grid.Row="1" Margin="2,0,2,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="150"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="64"/>
+                                    <ColumnDefinition Width="58"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="失效检测项" FontSize="12" Foreground="{StaticResource TextDim}"/>
+                                <TextBlock Grid.Column="1" Text="分布" FontSize="12" Foreground="{StaticResource TextDim}"/>
+                                <TextBlock Grid.Column="2" Text="数量" FontSize="12" Foreground="{StaticResource TextDim}" TextAlignment="Right"/>
+                                <TextBlock Grid.Column="3" Text="占比" FontSize="12" Foreground="{StaticResource TextDim}" TextAlignment="Right"/>
+                            </Grid>
+
+                            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding NgByItem}" Margin="0,2,0,0">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,3" Cursor="Hand" ToolTip="点击查看该失效项的不良电芯明细">
+                                                <Grid.InputBindings>
+                                                    <MouseBinding Gesture="LeftClick"
+                                                                  Command="{Binding DataContext.SelectNgItemCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                  CommandParameter="{Binding}"/>
+                                                </Grid.InputBindings>
+                                                <Grid.Style>
+                                                    <Style TargetType="Grid">
+                                                        <Setter Property="Background" Value="Transparent"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                <Setter Property="Background" Value="#14000000"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Grid.Style>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="150"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="64"/>
+                                                    <ColumnDefinition Width="58"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="{Binding ItemName}" VerticalAlignment="Center" ToolTip="{Binding ItemCode}">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Foreground" Value="{StaticResource Text}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsTop}" Value="True">
+                                                                    <Setter Property="Foreground" Value="{StaticResource Ng}"/>
+                                                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                                <Border Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left"
+                                                        Height="13" CornerRadius="3" Width="{Binding BarWidth}">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="{StaticResource Accent}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsTop}" Value="True">
+                                                                    <Setter Property="Background" Value="{StaticResource Ng}"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                </Border>
+                                                <TextBlock Grid.Column="2" Text="{Binding Count}" TextAlignment="Right"
+                                                           VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                                <TextBlock Grid.Column="3" Text="{Binding PercentText}" TextAlignment="Right"
+                                                           VerticalAlignment="Center" Foreground="{StaticResource TextDim}"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                            <TextBlock Grid.Row="2" Text="暂无不良记录" Foreground="{StaticResource TextDim}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding NgByItem.Count}" Value="0">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+                    </Border>
+
+                    <!-- 不良明细下钻：点击帕累托检测项 / 工序节点后展示 NG 电芯逐条数据 -->
+                    <Border Grid.Row="3" Background="{StaticResource Panel}" BorderBrush="{StaticResource PanelEdge}"
+                            BorderThickness="1" CornerRadius="10" Padding="12" Margin="0,0,0,10" Height="212">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Grid Grid.Row="0" Margin="2,0,0,8">
+                                <TextBlock Text="{Binding NgDetailTitle}" FontWeight="SemiBold" VerticalAlignment="Center"
+                                           Foreground="{StaticResource Text}"/>
+                                <Button Content="清除筛选" HorizontalAlignment="Right" Padding="10,3" FontSize="12"
+                                        Command="{Binding ClearNgFilterCommand}"
+                                        Background="{StaticResource Panel}" Foreground="{StaticResource Text}"
+                                        BorderBrush="{StaticResource PanelEdge}" BorderThickness="1"/>
+                            </Grid>
+                            <ListView Grid.Row="1" x:Name="NgDetailList" ItemsSource="{Binding NgDetails}"
+                                      Background="Transparent" BorderThickness="0"
+                                      ItemContainerStyle="{StaticResource RowItem}"
+                                      ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                <ListView.Resources>
+                                    <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource HeadRow}"/>
+                                </ListView.Resources>
+                                <ListView.InputBindings>
+                                    <MouseBinding Gesture="LeftDoubleClick"
+                                                  Command="{Binding OpenNgCellCommand}"
+                                                  CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource Self}}"/>
+                                </ListView.InputBindings>
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="电芯 SN" Width="196" DisplayMemberBinding="{Binding CellSn}"/>
+                                        <GridViewColumn Header="工序" Width="104" DisplayMemberBinding="{Binding OperationCode}"/>
+                                        <GridViewColumn Header="设备" Width="106" DisplayMemberBinding="{Binding EquipmentCode}"/>
+                                        <GridViewColumn Header="失效检测项" Width="120" DisplayMemberBinding="{Binding FailText}"/>
+                                        <GridViewColumn Header="检测时间" Width="150" DisplayMemberBinding="{Binding Time}"/>
+                                        <GridViewColumn Header="检测值明细" Width="560" DisplayMemberBinding="{Binding Detail}"/>
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+                        </Grid>
+                    </Border>
+
+                    <!-- 各检测项稳定性 -->
+                    <Border Grid.Row="4" Background="{StaticResource Panel}" BorderBrush="{StaticResource PanelEdge}"
+                            BorderThickness="1" CornerRadius="10" Padding="12">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" FontWeight="SemiBold" Margin="2,0,0,10">
+                                <Run Text="各检测项稳定性"/>
+                                <Run Text="  Cpk ≥ 1.33 过程能力充足 · &lt; 1.33 标红警告" FontSize="12" Foreground="{StaticResource TextDim}"/>
+                            </TextBlock>
+                            <ListView Grid.Row="1" ItemsSource="{Binding Stability}"
+                                      Background="Transparent" BorderThickness="0"
+                                      ItemContainerStyle="{StaticResource RowItem}"
+                                      ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                <ListView.Resources>
+                                    <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource HeadRow}"/>
+                                </ListView.Resources>
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="检测项" Width="110" DisplayMemberBinding="{Binding ItemCode}"/>
+                                        <GridViewColumn Header="名称" Width="150" DisplayMemberBinding="{Binding ItemName}"/>
+                                        <GridViewColumn Header="样本数" Width="66" DisplayMemberBinding="{Binding Samples}"/>
+                                        <GridViewColumn Header="均值" Width="86" DisplayMemberBinding="{Binding Mean}"/>
+                                        <GridViewColumn Header="σ" Width="86" DisplayMemberBinding="{Binding Sigma}"/>
+                                        <GridViewColumn Header="规格限" Width="130" DisplayMemberBinding="{Binding Spec}"/>
+                                        <GridViewColumn Header="Cp" Width="56" DisplayMemberBinding="{Binding Cp}"/>
+                                        <GridViewColumn Header="Cpk" Width="76">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Cpk}" FontWeight="SemiBold">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="{StaticResource Text}"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsWeakCpk}" Value="True">
+                                                                        <Setter Property="Foreground" Value="{StaticResource Ng}"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="超规格" Width="66" DisplayMemberBinding="{Binding OutOfSpec}"/>
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- ═══ 页签 4：数据查询 ═══ -->
+            <TabItem Header="数据查询">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="1.2*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- 单芯追溯：SN 查询行 -->
+                    <Border Grid.Row="0" Background="{StaticResource Panel}" BorderBrush="{StaticResource PanelEdge}"
+                            BorderThickness="1" CornerRadius="10" Padding="10" Margin="0,0,0,10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="220"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="电芯 SN" VerticalAlignment="Center" Margin="4,0,8,0"
+                                       FontWeight="SemiBold"/>
+                            <TextBox Grid.Column="1" Text="{Binding QuerySn, UpdateSourceTrigger=PropertyChanged}"
+                                     VerticalAlignment="Center" Padding="6,5" Background="#FFFFFFFF"
+                                     BorderBrush="{StaticResource PanelEdge}" BorderThickness="1"
+                                     ToolTip="输入电芯 SN 回车追溯">
+                                <TextBox.InputBindings>
+                                    <KeyBinding Key="Enter" Command="{Binding QueryTraceCommand}"/>
+                                </TextBox.InputBindings>
+                            </TextBox>
+                            <Button Grid.Column="2" Content="追溯" Command="{Binding QueryTraceCommand}"
+                                    Margin="8,0,12,0" Padding="16,6"
+                                    Background="{StaticResource Accent}" Foreground="White" BorderThickness="0"/>
+                            <TextBlock Grid.Column="3" Text="{Binding QueryTraceSummary}" VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis" ToolTip="{Binding QueryTraceSummary}"
+                                       Foreground="{StaticResource TextDim}"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- 单芯追溯：全工序记录 -->
+                    <Border Grid.Row="1" Background="{StaticResource Panel}" BorderBrush="{StaticResource PanelEdge}"
+                            BorderThickness="1" CornerRadius="10" Padding="10" Margin="0,0,0,10">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Padding="4,0,0,8">
+                                <Run Text="单芯档案 · 全工序检测记录" FontWeight="SemiBold"/>
+                                <Run Text="  双击追溯后自动填充 · NG 行红色高亮" Foreground="{StaticResource TextDim}" FontSize="12"/>
+                            </TextBlock>
+                            <ListView Grid.Row="1" ItemsSource="{Binding QueryTraceRows}"
+                                      Background="Transparent" BorderThickness="0"
+                                      ItemContainerStyle="{StaticResource RowItem}"
+                                      ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                <ListView.Resources>
+                                    <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource HeadRow}"/>
+                                </ListView.Resources>
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="时间" Width="150" DisplayMemberBinding="{Binding Time}"/>
+                                        <GridViewColumn Header="工序" Width="100" DisplayMemberBinding="{Binding OperationCode}"/>
+                                        <GridViewColumn Header="设备" Width="110" DisplayMemberBinding="{Binding EquipmentCode}"/>
+                                        <GridViewColumn Header="判定" Width="50" DisplayMemberBinding="{Binding Result}"/>
+                                        <GridViewColumn Header="检测值明细" Width="640" DisplayMemberBinding="{Binding Detail}"/>
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+                        </Grid>
+                    </Border>
+
+                    <!-- 条件查询：筛选行（时间 / 工段 / 设备 / 工序 / 结果） -->
+                    <Border Grid.Row="2" Background="{StaticResource Panel}" BorderBrush="{StaticResource PanelEdge}"
+                            BorderThickness="1" CornerRadius="10" Padding="10" Margin="0,0,0,10">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- 第一行：时间范围 + 工段 + 设备 -->
+                            <StackPanel Grid.Row="0" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="0,0,0,8">
+                                <TextBlock Text="时间从" VerticalAlignment="Center" Margin="4,0,6,0"/>
+                                <TextBox Text="{Binding QueryFromText, UpdateSourceTrigger=PropertyChanged}" Width="120"
+                                         VerticalAlignment="Center" Padding="5,4" Background="#FFFFFFFF"
+                                         BorderBrush="{StaticResource PanelEdge}" BorderThickness="1"
+                                         ToolTip="yyyy-MM-dd HH:mm，清空 = 不限起始时间"/>
+                                <TextBlock Text="至" VerticalAlignment="Center" Margin="10,0,6,0"/>
+                                <TextBox Text="{Binding QueryToText, UpdateSourceTrigger=PropertyChanged}" Width="120"
+                                         VerticalAlignment="Center" Padding="5,4" Background="#FFFFFFFF"
+                                         BorderBrush="{StaticResource PanelEdge}" BorderThickness="1"
+                                         ToolTip="yyyy-MM-dd HH:mm，只填日期则含当天全天；清空 = 不限截止时间"/>
+                                <TextBlock Text="工段" VerticalAlignment="Center" Margin="16,0,6,0"/>
+                                <ComboBox ItemsSource="{Binding StageFilterOptions}" SelectedItem="{Binding QueryStageFilter}"
+                                          Width="84" VerticalAlignment="Center" Padding="6,4" Background="#FFFFFFFF"/>
+                                <TextBlock Text="设备" VerticalAlignment="Center" Margin="16,0,6,0"/>
+                                <ComboBox ItemsSource="{Binding EquipmentFilterOptions}" SelectedItem="{Binding QueryEquipmentFilter}"
+                                          Width="150" VerticalAlignment="Center" Padding="6,4" Background="#FFFFFFFF"/>
+                            </StackPanel>
+
+                            <!-- 第二行：工序 + 结果 + 条数 + 查询 -->
+                            <StackPanel Grid.Row="1" Grid.ColumnSpan="3" Orientation="Horizontal">
+                                <TextBlock Text="工序" VerticalAlignment="Center" Margin="4,0,6,0"/>
+                                <ComboBox ItemsSource="{Binding OpFilterOptions}" SelectedItem="{Binding QueryOpFilter}"
+                                          Width="120" VerticalAlignment="Center" Padding="6,4" Background="#FFFFFFFF"/>
+                                <TextBlock Text="结果" VerticalAlignment="Center" Margin="16,0,6,0"/>
+                                <ComboBox ItemsSource="{Binding ResultFilterOptions}" SelectedItem="{Binding QueryResultFilter}"
+                                          Width="84" VerticalAlignment="Center" Padding="6,4" Background="#FFFFFFFF"/>
+                                <TextBlock Text="条数" VerticalAlignment="Center" Margin="16,0,6,0"/>
+                                <TextBox Text="{Binding QueryTake}" Width="64" VerticalAlignment="Center"
+                                         Padding="5,4" Background="#FFFFFFFF"
+                                         BorderBrush="{StaticResource PanelEdge}" BorderThickness="1"/>
+                                <Button Content="查询" Command="{Binding QuerySearchCommand}"
+                                        Margin="12,0,12,0" Padding="18,6"
+                                        Background="{StaticResource Accent}" Foreground="White" BorderThickness="0"/>
+                                <TextBlock Text="{Binding QueryListSummary}" VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis" ToolTip="{Binding QueryListSummary}"
+                                           Foreground="{StaticResource TextDim}"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- 条件查询：结果列表 -->
+                    <Border Grid.Row="3" Background="{StaticResource Panel}" BorderBrush="{StaticResource PanelEdge}"
+                            BorderThickness="1" CornerRadius="10" Padding="10">
+                        <ListView ItemsSource="{Binding QueryRows}"
+                                  Background="Transparent" BorderThickness="0"
+                                  ItemContainerStyle="{StaticResource RowItem}"
+                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                  VirtualizingPanel.IsVirtualizing="True">
+                            <ListView.Resources>
+                                <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource HeadRow}"/>
+                            </ListView.Resources>
+                            <ListView.InputBindings>
+                                <MouseBinding Gesture="LeftDoubleClick"
+                                              Command="{Binding QueryPickCellCommand}"
+                                              CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource Self}}"/>
+                            </ListView.InputBindings>
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="时间" Width="150" DisplayMemberBinding="{Binding Time}"/>
+                                    <GridViewColumn Header="电芯 SN" Width="176" DisplayMemberBinding="{Binding CellSn}"/>
+                                    <GridViewColumn Header="工序" Width="100" DisplayMemberBinding="{Binding OperationCode}"/>
+                                    <GridViewColumn Header="设备" Width="110" DisplayMemberBinding="{Binding EquipmentCode}"/>
+                                    <GridViewColumn Header="判定" Width="50" DisplayMemberBinding="{Binding Result}"/>
+                                    <GridViewColumn Header="检测值明细" Width="560" DisplayMemberBinding="{Binding Detail}"/>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+                    </Border>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>

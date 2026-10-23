@@ -1,0 +1,58 @@
+name: bcmes
+
+# 真实工厂的 L3 基础设施三件套。
+# Docker Hub 被墙的镜像走 daocloud 代理源；mcr.microsoft.com（微软自有 CDN）可直连。
+# Redis 映射 6380：本机 6379 已被其它服务占用。
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: bcmes-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${SA_PASSWORD:-BcMes#2026_Str0ng}
+      MSSQL_PID: Developer
+      TZ: Asia/Shanghai
+    ports:
+      - "1433:1433"
+    volumes:
+      - bcmes-sql:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -C -Q 'SELECT 1' -b -o /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  redis:
+    image: docker.m.daocloud.io/library/redis:7-alpine
+    container_name: bcmes-redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - bcmes-redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  tdengine:
+    image: docker.m.daocloud.io/tdengine/tdengine:3.3.6.13
+    container_name: bcmes-tdengine
+    environment:
+      TZ: Asia/Shanghai
+    ports:
+      - "6041:6041"          # REST / WebSocket（taosAdapter）
+    volumes:
+      - bcmes-tdengine:/var/lib/taos
+    healthcheck:
+      test: ["CMD-SHELL", "taos -s 'SELECT SERVER_VERSION()' | grep -q ."]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  bcmes-sql:
+  bcmes-redis:
+  bcmes-tdengine:
